@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemberTrack - Sistema de Gestión de Socios</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <i class="fas fa-users logo-icon"></i>
+                    <div>
+                        <h1>MemberTrack</h1>
+                        <p>Sistema de Gestión de Socios</p>
+                    </div>
+                </div>
+                <div class="theme-switch-wrapper">
+                    <span>Modo Oscuro</span>
+                    <label class="theme-switch" for="checkbox">
+                        <input type="checkbox" id="checkbox" />
+                        <div class="slider round"></div>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="miembros">
+                <i class="fas fa-user-friends"></i> 
+                <span>Miembros</span>
+            </button>
+            <button class="tab-btn" data-tab="pagos">
+                <i class="fas fa-money-bill-wave"></i> 
+                <span>Pagos</span>
+            </button>
+            <button class="tab-btn" data-tab="reportes">
+                <i class="fas fa-chart-bar"></i> 
+                <span>Reportes</span>
+            </button>
+        </nav>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p>Cargando datos...</p>
+            </div>
+        </div>
+
+        <!-- Miembros Tab -->
+        <div id="miembros" class="tab-content active">
+            <div class="section-header">
+                <div class="header-title">
+                    <h2><i class="fas fa-users"></i> Gestión de Miembros</h2>
+                    <p class="subtitle">Administra la información de todos los miembros</p>
+                </div>
+                <button id="btnNuevoMiembro" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Miembro
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filters-card">
+                <h3 class="filters-title"><i class="fas fa-filter"></i> Filtros</h3>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="filtroSector">Sector:</label>
+                        <select id="filtroSector">
+                            <option value="">Todos los sectores</option>
+                            <option value="Tecnología">Tecnología</option>
+                            <option value="Salud">Salud</option>
+                            <option value="Educación">Educación</option>
+                            <option value="Comercio">Comercio</option>
+                            <option value="Servicios">Servicios</option>
+                            <option value="Transporte">Transporte</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filtroEstado">Estado:</label>
+                        <select id="filtroEstado">
+                            <option value="">Todos los estados</option>
+                            <option value="activo">Activo</option>
+                            <option value="inactivo">Inactivo</option>
+                            <option value="suspendido">Suspendido</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="buscarNombre">Buscar:</label>
+                        <input type="text" id="buscarNombre" placeholder="Nombre del miembro...">
+                    </div>
+                    <div class="filter-actions">
+                        <button id="btnLimpiarFiltros" class="btn btn-secondary">
+                            <i class="fas fa-eraser"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Miembros -->
+            <div class="table-card">
+                <div class="table-container">
+                    <table id="tablaMiembros">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Sector</th>
+                                <th>Fecha Ingreso</th>
+                                <th>Estado</th>
+                                <th>Email</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Datos se cargan dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagos Tab -->
+        <div id="pagos" class="tab-content">
+            <div class="section-header">
+                <div class="header-title">
+                    <h2><i class="fas fa-money-bill-wave"></i> Gestión de Pagos</h2>
+                    <p class="subtitle">Registra y administra los pagos de los miembros</p>
+                </div>
+                <button id="btnNuevoPago" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Registrar Pago
+                </button>
+            </div>
+
+            <!-- Filtros de Pagos -->
+            <div class="filters-card">
+                <h3 class="filters-title"><i class="fas fa-filter"></i> Filtros de Pagos</h3>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="filtroMiembro">Miembro:</label>
+                        <select id="filtroMiembro">
+                            <option value="">Todos los miembros</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="fechaDesde">Desde:</label>
+                        <input type="date" id="fechaDesde">
+                    </div>
+                    <div class="filter-group">
+                        <label for="fechaHasta">Hasta:</label>
+                        <input type="date" id="fechaHasta">
+                    </div>
+                    <div class="filter-actions">
+                        <button id="btnLimpiarFiltrosPagos" class="btn btn-secondary">
+                            <i class="fas fa-eraser"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Pagos -->
+            <div class="table-card">
+                <div class="table-container">
+                    <table id="tablaPagos">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Miembro</th>
+                                <th>Fecha Pago</th>
+                                <th>Monto</th>
+                                <th>Concepto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Datos se cargan dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reportes Tab -->
+        <div id="reportes" class="tab-content">
+            <div class="section-header">
+                <div class="header-title">
+                    <h2><i class="fas fa-chart-bar"></i> Reportes y Estadísticas</h2>
+                    <p class="subtitle">Visualiza el rendimiento y estadísticas de tu organización</p>
+                </div>
+                <button id="btnActualizarReportes" class="btn btn-secondary">
+                    <i class="fas fa-sync"></i> Actualizar
+                </button>
+            </div>
+
+            <!-- Cards de estadísticas -->
+            <div class="stats-grid">
+                <div class="stat-card stat-primary">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Miembros Activos</h3>
+                        <p class="stat-number" id="totalActivos">0</p>
+                        <span class="stat-label">Del total registrado</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-success">
+                    <div class="stat-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Sector Predominante</h3>
+                        <p class="stat-text" id="sectorPredominante">-</p>
+                        <span class="stat-label">Mayor concentración</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Ingresos del Mes</h3>
+                        <p class="stat-number" id="ingresosMes">S/. 0</p>
+                        <span class="stat-label">Período actual</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card stat-info">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Nuevos este Mes</h3>
+                        <p class="stat-number" id="nuevosMes">0</p>
+                        <span class="stat-label">Miembros registrados</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-pie"></i> Distribución por Sector</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chartSectores"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-line"></i> Ingresos Últimos 6 Meses</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="incomeChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-bar"></i> Estado de Miembros</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones de exportación -->
+            <div class="export-section">
+                <div class="export-card">
+                    <div class="export-header">
+                        <h3><i class="fas fa-download"></i> Exportar Reportes</h3>
+                        <p>Descarga reportes detallados en formato PDF</p>
+                    </div>
+                    <div class="export-actions">
+                        <button id="exportMembersPdf" class="btn btn-export">
+                            <i class="fas fa-file-pdf"></i> Reporte de Miembros
+                        </button>
+                        <button id="exportPaymentsPdf" class="btn btn-export">
+                            <i class="fas fa-file-pdf"></i> Reporte de Pagos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Miembro -->
+    <div id="modalMiembro" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalMiembroTitulo">Nuevo Miembro</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <form id="formMiembro">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombre">Nombre Completo *</label>
+                        <input type="text" id="nombre" placeholder="Ingresa el nombre completo" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sector">Sector *</label>
+                        <select id="sector" required>
+                            <option value="">Seleccionar sector</option>
+                            <option value="Tecnología">Tecnología</option>
+                            <option value="Salud">Salud</option>
+                            <option value="Educación">Educación</option>
+                            <option value="Comercio">Comercio</option>
+                            <option value="Servicios">Servicios</option>
+                            <option value="Transporte">Transporte</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fechaIngreso">Fecha de Ingreso *</label>
+                        <input type="date" id="fechaIngreso" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="estadoMembresia">Estado de Membresía *</label>
+                        <select id="estadoMembresia" required>
+                            <option value="activo">Activo</option>
+                            <option value="inactivo">Inactivo</option>
+                            <option value="suspendido">Suspendido</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico</label>
+                        <input type="email" id="email" placeholder="ejemplo@correo.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" placeholder="+51 987 654 321">
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btnCancelarMiembro">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Pago -->
+    <div id="modalPago" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalPagoTitulo">Registrar Nuevo Pago</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <form id="formPago">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="miembroId">Miembro *</label>
+                        <select id="miembroId" required>
+                            <option value="">Seleccionar miembro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fechaPago">Fecha de Pago *</label>
+                        <input type="date" id="fechaPago" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="monto">Monto (S/.) *</label>
+                        <input type="number" id="monto" step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="form-group form-group-full">
+                        <label for="concepto">Concepto</label>
+                        <input type="text" id="concepto" placeholder="Cuota mensual, matrícula, etc.">
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="btnCancelarPago">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <i class="toast-icon"></i>
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <h3>MemberTrack</h3>
+                <p>&copy; 2025 MemberTrack. Todos los derechos reservados.</p>
+            </div>
+            <div class="social-icons">
+                <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                    <i class="fab fa-linkedin"></i>
+                </a>
+                <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
