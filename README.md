@@ -27,3 +27,7 @@ Fue creada con **HTML, CSS, JavaScript** y **PostgreSQL (Supabase)** para demost
 1. Clona este repositorio:
    ```bash
    git clone https://github.com/TU-USUARIO/membertrack.git
+
+## 📷 Capturas
+<img src="https://github.com/user-attachments/assets/205279cc-8329-42b7-953c-058e99e398ef" width="800">
+
